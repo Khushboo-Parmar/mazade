@@ -18,32 +18,26 @@ async function loginUser(req, res) {
                 console.error('Error executing SQL query:', err);
                 return res.status(500).json({ error: 'Internal Server Error' });
             }
-
-
             if (results.length === 0) {
                 return res.status(200).json({ status: 200, unauthorized: 'User not found' });
             }
             const token = jwt.sign({ id: results[0]?.id, email: email }, secretKey, { expiresIn: '11h' });
-            console.log(await bcrypt.compare(password, results[0].password), 
-            results[0].password,hashpassword)
-
-
-            if (await bcrypt.compare(password, results[0].password)) {
+            if (await bcrypt.compare(`${password}`, results[0].password)) {
+            } else {
                 return res.status(200).json({ status: 400, message: 'Password is incorrect' });
             }
-            pool.query(`UPDATE users SET remember_token = ? WHERE id = ?`, [token, results[0]?.id], (settingsErr, settingsResults) => {
+            pool.query(`UPDATE users SET rember_me = ? WHERE id = ?`, [token, results[0]?.id], (settingsErr, settingsResults) => {
                 if (settingsErr) {
                     console.error('Error executing SQL query for user settings:', settingsErr);
                     return res.status(500).json({ error: 'Internal Server Error' });
                 }
 
-                pool.query(`SELECT * FROM employees WHERE user_id = ?`, [results[0]?.id], (anotherErr, anotherResults) => {
+                pool.query(`SELECT * FROM users WHERE id = ?`, [results[0]?.id], (anotherErr, anotherResults) => {
                     if (anotherErr) {
                         console.error('Error executing SQL query for another table:', anotherErr);
                         return res.status(500).json({ error: 'Internal Server Error' });
                     }
-
-                    res.status(200).json({ status: 200, message: 'User logged in successfully', data: { token: token, employe: anotherResults, user: results, isAuth: true } });
+                    res.status(200).json({ status: 200, message: 'User logged in successfully', data: { token: token,user:results} });
                 });
 
 
